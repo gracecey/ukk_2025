@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'login.dart'; // Impor file login.dart
+import 'login.dart';
+import 'home.dart';
 
 Future<void> main() async {
   await Supabase.initialize(
@@ -9,6 +10,7 @@ Future<void> main() async {
   );
   runApp(MyApp());
 }
+        
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

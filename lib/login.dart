@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'home.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -17,22 +18,31 @@ class _LoginState extends State<Login> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final response = await Supabase.instance.client
-            .from('user')
+        final supabase = Supabase.instance.client;
+        
+        // Cek user berdasarkan username dan password
+        final response = await supabase
+            .from('user')  // Sesuai nama tabel di database Supabase
             .select()
             .eq('username', _usernameController.text)
-            .eq('password', _passwordController.text)
+            .eq('password', _passwordController.text) // NOTE: Harusnya password di-hash
             .maybeSingle();
 
-        if (response == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Invalid username or password')),
-          );
+        if (response != null) {
+          // Login berhasil, navigasi ke halaman Home
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
         } else {
+          // Jika user tidak ditemukan
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Username atau password salah')),
+          );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An error occurred: $e')),
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
         );
       } finally {
         setState(() => _isLoading = false);
@@ -73,7 +83,7 @@ class _LoginState extends State<Login> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your username';
+                        return 'Masukkan username';
                       }
                       return null;
                     },
@@ -103,7 +113,7 @@ class _LoginState extends State<Login> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
+                        return 'Masukkan password';
                       }
                       return null;
                     },
@@ -119,7 +129,8 @@ class _LoginState extends State<Login> {
                                 horizontal: 50, vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(50),
-                              side: const BorderSide(color: Colors.green, width: 2),
+                              side: const BorderSide(
+                                  color: Colors.green, width: 2),
                             ),
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.green,

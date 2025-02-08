@@ -8,7 +8,157 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final SupabaseClient supabase = Supabase.instance.client;
   int _selectedIndex = 0;
+
+  Future<List<Map<String, dynamic>>> _fetchUsers() async {
+    final response = await supabase.from('user').select();
+    return response;
+  }
+
+  Future<void> _addUser() async {
+    final _formKey = GlobalKey<FormState>();
+    TextEditingController usernameController = TextEditingController();
+    TextEditingController passwordController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Tambah User'),
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: usernameController,
+                  decoration: InputDecoration(labelText: 'Username'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Username tidak boleh kosong';
+                    }
+                    if (value.length < 3) {
+                      return 'Username minimal 3 karakter';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: passwordController,
+                  decoration: InputDecoration(labelText: 'Password'),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password tidak boleh kosong';
+                    }
+                    if (value.length < 6) {
+                      return 'Password minimal 6 karakter';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  await supabase.from('user').insert({
+                    'username': usernameController.text,
+                    'password': passwordController.text,
+                    'created_at': DateTime.now().toIso8601String(),
+                  });
+                  Navigator.pop(context);
+                  setState(() {});
+                }
+              },
+              child: Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _editUser(int id, String oldUsername, String oldPassword) async {
+    final _formKey = GlobalKey<FormState>();
+    TextEditingController usernameController = TextEditingController(text: oldUsername);
+    TextEditingController passwordController = TextEditingController(text: oldPassword);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Edit User'),
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: usernameController,
+                  decoration: InputDecoration(labelText: 'Username'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Username tidak boleh kosong';
+                    }
+                    if (value.length < 3) {
+                      return 'Username minimal 3 karakter';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: passwordController,
+                  decoration: InputDecoration(labelText: 'Password'),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password tidak boleh kosong';
+                    }
+                    if (value.length < 6) {
+                      return 'Password minimal 6 karakter';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  await supabase.from('user').update({
+                    'username': usernameController.text,
+                    'password': passwordController.text,
+                  }).eq('id', id);
+                  Navigator.pop(context);
+                  setState(() {});
+                }
+              },
+              child: Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteUser(int id) async {
+    await supabase.from('user').delete().eq('id', id);
+    setState(() {});
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -16,27 +166,28 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _logout(BuildContext context) {
+  void _logout() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: const Text("Konfirmasi Logout"),
-          content: const Text("Apakah Anda yakin ingin logout?"),
+          title: Text('Konfirmasi Logout'),
+          content: Text('Apakah Anda yakin ingin logout?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Batal"),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Batal'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pushReplacement(
+                Navigator.pop(context);
+                Navigator.pushAndRemoveUntil(
+                  context,
                   MaterialPageRoute(builder: (context) => Login()),
+                  (Route<dynamic> route) => false,
                 );
               },
-              child: const Text("Logout"),
+              child: Text('Iya'),
             ),
           ],
         );
@@ -48,64 +199,79 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Kasir Cafe",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        backgroundColor: Colors.purple,
+        title: Text(
+          'Kasir Cafe',
+          style: TextStyle(color: Colors.white),
         ),
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.deepPurple,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            color: Colors.white,
-            onPressed: () => _logout(context),
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: _logout,
           ),
         ],
       ),
-      body: _HomeScreenState[_selectedIndex],
+      body: _selectedIndex == 0 ? _buildUserList() : _buildProductList(),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Produk',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Transaksi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Pelanggan',
-          ),
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Produk'),
         ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.purple,
+        onTap: _onItemTapped,
       ),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
-              onPressed: () async {
-                final result = await Navigator.push;
-
-                if (result == true) {
-                  setState(() {});
-                }
-              },
-              backgroundColor: Colors.deepPurple,
-              child: const Icon(Icons.add, color: Colors.white),
+              onPressed: _addUser,
+              backgroundColor: Colors.purple,
+              child: Icon(Icons.add, color: Colors.white),
             )
           : null,
     );
   }
-}
 
+  Widget _buildUserList() {
+    return FutureBuilder(
+      future: _fetchUsers(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('Tidak ada user'));
+        }
+        final users = snapshot.data as List<Map<String, dynamic>>;
+        return ListView.builder(
+          itemCount: users.length,
+          itemBuilder: (context, index) {
+            final user = users[index];
+            return ListTile(
+              title: Text(user['username']),
+              subtitle: Text(user['password']),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => _editUser(user['id'], user['username'], user['password']),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteUser(user['id']),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
-class TransaksiScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildProductList() {
     return Center(
-      child: const Text('Fitur Transaksi Belum Implementasi'),
+      child: Text('Halaman Produk', style: TextStyle(fontSize: 18)),
     );
   }
 }
