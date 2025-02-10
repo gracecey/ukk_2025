@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login.dart';
+import 'produk.dart';
+import 'pelanggan.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -42,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       return 'Username minimal 3 karakter';
                     }
                     return null;
-                  },
+                  },      
                 ),
                 TextFormField(
                   controller: passwordController,
@@ -156,9 +158,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deleteUser(int id) async {
-    await supabase.from('user').delete().eq('id', id);
-    setState(() {});
-  }
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text('Konfirmasi Hapus'),
+        content: Text('Apakah Anda yakin ingin menghapus user ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await supabase.from('user').delete().eq('id', id);
+              Navigator.pop(context); // Tutup dialog
+              setState(() {}); // Perbarui tampilan
+            },
+            child: Text('Hapus'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
   void _onItemTapped(int index) {
     setState(() {
@@ -211,11 +236,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _selectedIndex == 0 ? _buildUserList() : _buildProductList(),
+      body: _selectedIndex == 0 ? _buildUserList() : ProdukScreen(),
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Produk'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Pelanggan'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.purple,
@@ -243,35 +269,44 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         final users = snapshot.data as List<Map<String, dynamic>>;
         return ListView.builder(
+          padding: EdgeInsets.all(10),
           itemCount: users.length,
           itemBuilder: (context, index) {
             final user = users[index];
-            return ListTile(
-              title: Text(user['username']),
-              subtitle: Text(user['password']),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () => _editUser(user['id'], user['username'], user['password']),
+            return Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.purple,
+                  child: Text(
+                    user['username'][0].toUpperCase(),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _deleteUser(user['id']),
-                  ),
-                ],
+                ),
+                title: Text(user['username'], style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text('Password: ${user['password']}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => _editUser(user['id'], user['username'], user['password']),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _deleteUser(user['id']),
+                    ),
+                  ],
+                ),
               ),
             );
           },
         );
       },
-    );
-  }
-
-  Widget _buildProductList() {
-    return Center(
-      child: Text('Halaman Produk', style: TextStyle(fontSize: 18)),
     );
   }
 }
