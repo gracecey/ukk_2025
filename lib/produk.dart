@@ -10,10 +10,10 @@ class ProdukScreen extends StatefulWidget {
 class _ProdukScreenState extends State<ProdukScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  Future<List<Map<String, dynamic>>> fetchProduk() async {
-    final response = await supabase.from('produk').select();
-    return response;
-  }
+ Future<List<Map<String, dynamic>>> fetchProduk() async {
+  final response = await supabase.from('produk').select().order('created_at', ascending: false);
+  return response;
+}
 
  Future<void> deleteProduk(int id) async {
   showDialog(

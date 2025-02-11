@@ -10,7 +10,7 @@ class _PelangganScreenState extends State<PelangganScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
 
   Future<List<Map<String, dynamic>>> fetchPelanggan() async {
-    final response = await supabase.from('pelanggan').select();
+    final response = await supabase.from('pelanggan').select().order('created_at', ascending: false);
     return response;
   }
 
@@ -46,7 +46,7 @@ class _PelangganScreenState extends State<PelangganScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.purple,
-        title: Text("Daftar Pelanggan", style: TextStyle(color: Colors.white)),
+        title: Text('Daftar Pelanggan', style: TextStyle(color: Colors.white)),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.purple,
@@ -81,15 +81,13 @@ class _PelangganScreenState extends State<PelangganScreen> {
                     ),
                   ),
                   title: Text(pelanggan['nama_pelanggan'], style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    "Alamat: ${pelanggan['alamat']}\nTelepon: ${pelanggan['nomor_telepon']}",
-                    style: TextStyle(color: Colors.black54),
-                  ),
+                  subtitle: Text("Alamat: ${pelanggan['alamat']} | No. Telp: ${pelanggan['nomor_telepon']}",
+                      style: TextStyle(color: Colors.black54)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
+                        icon: Icon(Icons.edit, color: Colors.green),
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -161,10 +159,8 @@ class _PelangganFormState extends State<PelangganForm> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.purple,
-        title: Text(
-          widget.pelanggan == null ? "Tambah Pelanggan" : "Edit Pelanggan",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: Text(widget.pelanggan == null ? 'Tambah Pelanggan' : 'Edit Pelanggan',
+            style: TextStyle(color: Colors.white)),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -174,25 +170,25 @@ class _PelangganFormState extends State<PelangganForm> {
             children: [
               TextFormField(
                 controller: namaController,
-                decoration: InputDecoration(labelText: "Nama Pelanggan"),
-                validator: (value) => value!.isEmpty ? "Nama tidak boleh kosong" : null,
+                decoration: InputDecoration(labelText: 'Nama Pelanggan'),
+                validator: (value) => value!.isEmpty ? 'Nama pelanggan tidak boleh kosong' : null,
               ),
               TextFormField(
                 controller: alamatController,
-                decoration: InputDecoration(labelText: "Alamat"),
-                validator: (value) => value!.isEmpty ? "Alamat tidak boleh kosong" : null,
+                decoration: InputDecoration(labelText: 'Alamat'),
+                validator: (value) => value!.isEmpty ? 'Alamat tidak boleh kosong' : null,
               ),
               TextFormField(
                 controller: teleponController,
-                decoration: InputDecoration(labelText: "Nomor Telepon"),
+                decoration: InputDecoration(labelText: 'Nomor Telepon'),
                 keyboardType: TextInputType.phone,
-                validator: (value) => value!.isEmpty ? "Nomor telepon tidak boleh kosong" : null,
+                validator: (value) => value!.isEmpty ? 'Nomor telepon tidak boleh kosong' : null,
               ),
               SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12)),
                 onPressed: submitForm,
-                child: Text("Simpan", style: TextStyle(color: Colors.white)),
+                child: Text('Simpan', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),

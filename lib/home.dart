@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login.dart';
 import 'produk.dart';
 import 'pelanggan.dart';
+import 'transaksi.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -11,7 +12,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
-  int _selectedIndex = 0;
+  int _selectedIndex = 3;
 
   Future<List<Map<String, dynamic>>> _fetchUsers() async {
     final response = await supabase.from('user').select();
@@ -236,17 +237,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _selectedIndex == 0 ? _buildUserList() : ProdukScreen(),
+     body: _selectedIndex == 0 
+    ? _buildUserList() 
+    : _selectedIndex == 1 
+      ? ProdukScreen() 
+      : _selectedIndex == 2
+        ? PelangganScreen()
+        : TransaksiScreen(), // TAMBAHKAN INI
+
       bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Produk'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Pelanggan'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.purple,
-        onTap: _onItemTapped,
-      ),
+  items: [
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
+    BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Produk'),
+    BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Pelanggan'),
+    BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Transaksi"),
+  ],
+  currentIndex: _selectedIndex,
+  selectedItemColor: Colors.purple, // Warna ikon saat dipilih
+  unselectedItemColor: Colors.grey, // Warna ikon saat tidak dipilih
+  type: BottomNavigationBarType.fixed, // Menjaga tampilan label tetap terlihat
+  onTap: _onItemTapped,
+),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
               onPressed: _addUser,
