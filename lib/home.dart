@@ -4,6 +4,7 @@ import 'login.dart';
 import 'produk.dart';
 import 'pelanggan.dart';
 import 'transaksi.dart';
+import 'riwayat.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -237,13 +238,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-     body: _selectedIndex == 0 
-    ? _buildUserList() 
-    : _selectedIndex == 1 
-      ? ProdukScreen() 
-      : _selectedIndex == 2
-        ? PelangganScreen()
-        : TransaksiScreen(), // TAMBAHKAN INI
+    body: _selectedIndex == 0
+    ? _buildUserList()
+    : _selectedIndex == 1
+        ? ProdukScreen()
+        : _selectedIndex == 2
+            ? PelangganScreen()
+            : _selectedIndex == 3
+                ? TransaksiScreen()
+                : RiwayatPage(), // TAMBAHKAN INI
+
 
       bottomNavigationBar: BottomNavigationBar(
   items: [
@@ -251,6 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
     BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Produk'),
     BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Pelanggan'),
     BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Transaksi"),
+    BottomNavigationBarItem(icon: Icon(Icons.history), label: "Riwayat"),
   ],
   currentIndex: _selectedIndex,
   selectedItemColor: Colors.purple, // Warna ikon saat dipilih

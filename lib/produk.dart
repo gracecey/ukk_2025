@@ -9,49 +9,69 @@ class ProdukScreen extends StatefulWidget {
 
 class _ProdukScreenState extends State<ProdukScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
+  List<Map<String, dynamic>> _produkList = [];
+  List<Map<String, dynamic>> _filteredProduk = [];
+  TextEditingController _searchController = TextEditingController();
 
- Future<List<Map<String, dynamic>>> fetchProduk() async {
-  final response = await supabase.from('produk').select().order('created_at', ascending: false);
-  return response;
-}
+  @override
+  void initState() {
+    super.initState();
+    fetchProduk();
+    _searchController.addListener(() {
+      _filterProduk(_searchController.text);
+    });
+  }
 
- Future<void> deleteProduk(int id) async {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text('Konfirmasi Hapus'),
-        content: Text('Apakah Anda yakin ingin menghapus produk ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await supabase.from('produk').delete().eq('produk_id', id);
-              Navigator.pop(context); // Tutup dialog
-              setState(() {}); // Perbarui tampilan
-            },
-            child: Text('Hapus'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          ),
-        ],
-      );
-    },
-  );
-}
+  Future<void> fetchProduk() async {
+    final response = await supabase.from('produk').select().order('created_at', ascending: false);
+    setState(() {
+      _produkList = List<Map<String, dynamic>>.from(response);
+      _filteredProduk = _produkList;
+    });
+  }
 
+  void _filterProduk(String query) {
+    setState(() {
+      _filteredProduk = _produkList.where((produk) {
+        final namaProduk = produk['nama_produk'].toLowerCase();
+        return namaProduk.contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
+  Future<void> deleteProduk(int id) async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Konfirmasi Hapus'),
+          content: Text('Apakah Anda yakin ingin menghapus produk ini?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await supabase.from('produk').delete().eq('produk_id', id);
+                Navigator.pop(context);
+                fetchProduk();
+              },
+              child: Text('Hapus'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.purple,
-        title: Text(
-          "Daftar Produk",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: Text("Daftar Produk", style: TextStyle(color: Colors.white)),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.purple,
@@ -60,63 +80,73 @@ class _ProdukScreenState extends State<ProdukScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => ProdukForm()),
-          ).then((_) => setState(() {}));
+          ).then((_) => fetchProduk());
         },
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchProduk(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-          final produkList = snapshot.data!;
-          return ListView.builder(
+      body: Column(
+        children: [
+          Padding(
             padding: EdgeInsets.all(10),
-            itemCount: produkList.length,
-            itemBuilder: (context, index) {
-              final produk = produkList[index];
-              return Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.purple,
-                    child: Text(
-                      produk['nama_produk'][0].toUpperCase(),
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  title: Text(produk['nama_produk'], style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    "Harga: Rp ${produk['harga']} | Stok: ${produk['stok']}",
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProdukForm(produk: produk),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Cari Produk',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _filteredProduk.isEmpty
+                ? Center(child: Text('Produk tidak ditemukan.'))
+                : ListView.builder(
+                    padding: EdgeInsets.all(10),
+                    itemCount: _filteredProduk.length,
+                    itemBuilder: (context, index) {
+                      final produk = _filteredProduk[index];
+                      return Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.purple,
+                            child: Text(
+                              produk['nama_produk'][0].toUpperCase(),
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             ),
-                          ).then((_) => setState(() {}));
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => deleteProduk(produk['produk_id']),
-                      ),
-                    ],
+                          ),
+                          title: Text(produk['nama_produk'], style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(
+                            "Harga: Rp ${produk['harga']} | Stok: ${produk['stok']}",
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProdukForm(produk: produk),
+                                    ),
+                                  ).then((_) => fetchProduk());
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => deleteProduk(produk['produk_id']),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              );
-            },
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -186,30 +216,7 @@ class _ProdukFormState extends State<ProdukForm> {
                 decoration: InputDecoration(labelText: "Nama Produk"),
                 validator: (value) => value!.isEmpty ? "Nama produk tidak boleh kosong" : null,
               ),
-              TextFormField(
-                controller: hargaController,
-                decoration: InputDecoration(labelText: "Harga"),
-                keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty ? "Harga tidak boleh kosong" : null,
-              ),
-              TextFormField(
-                controller: stokController,
-                decoration: InputDecoration(labelText: "Stok"),
-                keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty ? "Stok tidak boleh kosong" : null,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
-                ),
-                onPressed: submitForm,
-                child: Text(
-                  "Simpan",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
+              ElevatedButton(onPressed: submitForm, child: Text("Simpan")),
             ],
           ),
         ),
